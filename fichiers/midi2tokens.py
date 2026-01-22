@@ -11,5 +11,7 @@ for inst in midi.instruments:
         tokens.append(f"NOTE_ON_{note.pitch}")
         tokens.append(f"DURATION_{note.end - note.start}")
 
-for token in tokens:
-    print(token)
+with open("test.txt", "w", encoding="utf-8") as f:
+    for token in tokens:
+        f.write(token+"\n")
+f.close()

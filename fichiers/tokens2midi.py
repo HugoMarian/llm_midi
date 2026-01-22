@@ -5,7 +5,7 @@ import miditoolkit
 TPQ = 480  # ticks per quarter
 TEMPO = 60
 
-nomFichier=sys.argv[1]
+nomFichier="./test.txt"
 print(nomFichier)
 file=open(nomFichier,"r")
 contenuFichier=file.read()
