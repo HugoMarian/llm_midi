@@ -1,11 +1,11 @@
 import sys
 import miditoolkit
-
+import re
 # --- paramètres globaux ---
 TPQ = 480  # ticks per quarter
 TEMPO = 60
 
-nomFichier="test.txt"
+nomFichier=sys.argv[1]
 print(nomFichier)
 file=open(nomFichier,"r")
 contenuFichier=file.read()
@@ -80,4 +80,5 @@ while i < len(tokens):
 midi.instruments.append(instrument)
 
 # sauvegarde
-midi.dump("generated.mid")
+nomFichier = nomFichier.removesuffix(".txt")
+midi.dump(nomFichier+".mid")
