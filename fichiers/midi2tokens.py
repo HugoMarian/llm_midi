@@ -1,6 +1,6 @@
 import miditoolkit
 
-nomFichier="FichiersMidi/GrandMidiPiano/Bach, Johann Sebastian, Partita in G major, BWV 829, aecenXn3obw.mid"
+nomFichier="GrandMidiPiano/Bach, Johann Sebastian, Partita in G major, BWV 829, aecenXn3obw.mid"
 midi = miditoolkit.MidiFile(nomFichier)
 
 tokens = []
