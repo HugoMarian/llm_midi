@@ -1,7 +1,13 @@
 import miditoolkit
+import sys
 
 nomFichier="GrandMidiPiano/Bach, Johann Sebastian, Partita in G major, BWV 829, aecenXn3obw.mid"
 midi = miditoolkit.MidiFile(nomFichier)
+if(sys.argv[1]):
+    sortie = sys.argv[1]
+else:
+    sortie = "test.txt"
+
 
 tokens = []
 
@@ -11,7 +17,7 @@ for inst in midi.instruments:
         tokens.append(f"NOTE_ON_{note.pitch}")
         tokens.append(f"DURATION_{note.end - note.start}")
 
-with open("test.txt", "w", encoding="utf-8") as f:
+with open(nomFichier, "w", encoding="utf-8") as f:
     for token in tokens:
         f.write(token+"\n")
 f.close()
