@@ -2,6 +2,7 @@ name: llm_midi
 channels:
   - conda-forge
   - nvidia
+  - pypi
   - defaults
 dependencies:
   - python=3.10.19
