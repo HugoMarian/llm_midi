@@ -1,3 +1,4 @@
+name: llm_midi
 channels:
   - conda-forge
   - defaults
