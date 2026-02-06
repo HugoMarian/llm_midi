@@ -28,10 +28,10 @@ GPT_CONFIG_NICO={
 
 
 raw_text=""
-with open("pesanteurEtLaGrace.txt","r",encoding="utf-8") as f:
+with open("../fichiers/exempleFichierToken.txt","r",encoding="utf-8") as f:
     current_text=f.read()
 raw_text += current_text
-with open("enracinement.txt","r",encoding="utf-8") as f:
+with open("../fichiers/test.txt","r",encoding="utf-8") as f:
     current_text=f.read()
 raw_text += current_text
 
@@ -49,12 +49,12 @@ vocab = {token:indice for indice,token in enumerate(all_tokens)}
 tokenizer = gpt.SimpleTokenizerV2(vocab)
 
 model=gpt.GPTModel(GPT_CONFIG_NICO)
-model.load_state_dict(torch.load("modelGPTFr.pth"))
+model.load_state_dict(torch.load("modelGPTmidi.pth"))
 model.eval()
 
-start_context="Le chat mange la souris "
+start_context="POSITION_200"
 encoded=tokenizer.encode(start_context)
 encoded_tensor=torch.tensor(encoded).unsqueeze(0)
 out=generate_text_simple(model=model,idx=encoded_tensor,max_new_tokens=60,context_size=GPT_CONFIG_NICO["context_length"])
 decoded_text=tokenizer.decode(out.squeeze(0).tolist())
-print(decoded_text)
+print(decoded_text.replace(" _ ", "_"))

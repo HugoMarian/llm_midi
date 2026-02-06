@@ -1,1 +1,4 @@
 *.mid
+*.pth
+*.txt
+*.pyc

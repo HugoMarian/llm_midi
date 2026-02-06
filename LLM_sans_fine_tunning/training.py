@@ -1,6 +1,8 @@
 import re
 import torch
 import gpt
+import subprocess
+import os
 
 from torch.utils.data import Dataset,DataLoader
 
@@ -16,7 +18,8 @@ def train_model_simple(model,train_loader,val_loader,optimizer,device,num_epochs
     tokens_seen,global_step=0,-1
 
     for epoch in range(num_epochs):
-        print(epoch)
+        print(f'device: {device}')
+        print(f'epoch: {epoch}')
         model.train()
         for input_batch, target_batch in train_loader:
             optimizer.zero_grad()
@@ -26,33 +29,34 @@ def train_model_simple(model,train_loader,val_loader,optimizer,device,num_epochs
             tokens_seen+=input_batch.numel()
             global_step+=1
 #            print(loss)
-        torch.save(model.state_dict(),"modelGPTprov.pth")
-#            if global_step % eval_freq == 0:
-#                train_loss,val_loss=evaluate_model(model,train_loader,val_loader,device,eval_iter)
-#                train_losses.append(train_loss)
-#                val_losses.append(val_loss)
-#                track_tokens_seen.append(tokens_seen)
+        #    if global_step % eval_freq == 0:
+        #        train_loss,val_loss=evaluate_model(model,train_loader,val_loader,device,eval_iter)
+        #        train_losses.append(train_loss)
+        #        val_losses.append(val_loss)
+        #        track_tokens_seen.append(tokens_seen)
 
- #       generate_and_print_sample(model,tokenizer,device_start_context)
+        # generate_and_print_sample(model,tokenizer,device_start_context)
+        torch.save(model.state_dict(),"modelGPTmidiAll.pth")
 
     return train_losses,val_losses,track_tokens_seen
 
 
 #lecture du fichier
-#with open("the-verdict.txt","r",encoding="utf-8") as f:
+# with open("../fichiers/exempleFichierToken.txt","r",encoding="utf-8") as f:
 #    raw_text=f.read()
+#    f.close()
     
-#tokenizer
-#preprocessed=re.split(r'([,.:;?_!"()\`]|--|\s)',raw_text)
+# # tokenizer
+# preprocessed=re.split(r'([,.:;?!"()\`]|--|\s)',raw_text)
 
-#all_words=sorted(set(preprocessed))
-#vocab_size=len(all_words)
+# all_words=sorted(set(preprocessed))
+# vocab_size=len(all_words)
 
-#vocab = {token:indice for indice,token in enumerate(all_words)}
-#all_tokens = sorted(list(set(preprocessed)))
-#all_tokens.extend(["<|endoftext|>","<|unk|>"])
-#vocab = {token:indice for indice,token in enumerate(all_tokens)}
-#tokenizer = gpt.SimpleTokenizerV2(vocab)
+# vocab = {token:indice for indice,token in enumerate(all_words)}
+# all_tokens = sorted(list(set(preprocessed)))
+# all_tokens.extend(["<|endoftext|>","<|unk|>"])
+# vocab = {token:indice for indice,token in enumerate(all_tokens)}
+# tokenizer = gpt.SimpleTokenizerV2(vocab)
 
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
 GPT_CONFIG_NICO={
@@ -65,22 +69,38 @@ GPT_CONFIG_NICO={
     "qkv_bias":False
 }
 
-relearn=True
-#relearn=False
+#relearn=True
+relearn=False
 model=gpt.GPTModel(GPT_CONFIG_NICO)
+
+model.to(device)
 if relearn==True:
-    model.load_state_dict(torch.load("modelGPTFr.pth"))
+    model.load_state_dict(torch.load("modelGPTmidiAll.pth", map_location=device))
+    model.to(device)
 
 raw_text=""
-with open("pesanteurEtLaGrace.txt","r",encoding="utf-8") as f:
-    current_text=f.read()
-raw_text += current_text
-with open("enracinement.txt","r",encoding="utf-8") as f:
-    current_text=f.read()
-raw_text += current_text
 
+# Transformation .mid -> tokens
+with os.scandir('../GrandMidiPiano') as d:
+    for e in d:
+        current_text = e.name.replace(".mid", "")
+        subprocess.run(["python", "../fichiers/midi2tokens.py", current_text+".mid"])
+        with open("../training/"+current_text+".txt","r",encoding="utf-8") as f:
+            current_text+=f.read()
+            f.close()
+        raw_text += current_text
+
+# with open("../fichiers/exempleFichierToken.txt","r",encoding="utf-8") as f:
+#    raw_text=f.read()
+#    f.close()
     
-#print(raw_text)
+# # tokenizer
+# with open("../fichiers/exempleFichierToken.txt","r",encoding="utf-8") as f:
+#     current_text=f.read()
+# raw_text += current_text
+# with open("../fichiers/test.txt","r",encoding="utf-8") as f:
+#     current_text=f.read()
+# raw_text += current_text
     
 preprocessed=re.split(r'([,.:;?_!"()\`]|--|\s)',raw_text)
 all_words=sorted(set(preprocessed))
@@ -99,10 +119,10 @@ train_loader=DataLoader(dataset=train_ds,batch_size=10,shuffle=True,num_workers=
 #print(len(train_loader))
 val_loader=DataLoader(dataset=train_ds,batch_size=10,shuffle=True,num_workers=0)
 optimizer=torch.optim.AdamW(model.parameters(),lr=0.0004,weight_decay=0.1)
-num_epochs=10
+num_epochs=15
 eval_freq=5
 eval_iter=5
 start_context=""
 
 train_model_simple(model,train_loader,val_loader,optimizer,device,num_epochs,eval_freq,eval_iter,start_context,tokenizer)
-torch.save(model.state_dict(),"modelGPTFr.pth")
+torch.save(model.state_dict(),"modelGPTmidiAll.pth")
