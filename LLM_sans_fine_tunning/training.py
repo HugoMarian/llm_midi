@@ -82,8 +82,8 @@ raw_text=""
 
 # Transformation .mid -> tokens
 i=0
-midToTokens = True
-
+midToTokens = False
+num_texts=2000
 with os.scandir('../GrandMidiPiano') as d:
     for e in d:
         current_text = e.name.replace(".mid", "")
@@ -96,6 +96,9 @@ with os.scandir('../GrandMidiPiano') as d:
             raw_text += current_text
         except:
             continue
+
+        if(i == num_texts):
+            break
         if(i%1000 == 0):
             print(f'Avancement tokenisation: {i}/10855')
         i+=1
