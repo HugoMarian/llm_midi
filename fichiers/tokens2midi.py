@@ -6,8 +6,7 @@ TPQ = 480  # ticks per quarter
 TEMPO = 60
 
 nomFichier=sys.argv[1]
-print(nomFichier)
-file=open(nomFichier,"r")
+file=open("../tests/"+nomFichier,"r")
 contenuFichier=file.read()
 contenuFichierSplite=contenuFichier.split("\n")
 
@@ -50,12 +49,13 @@ while i < len(tokens):
         current_time = int(token.split("_")[1])
         i += 1
 
-    elif token.startswith("VELOCITY_"):
-        current_velocity = int(token.split("_")[1])
-        i += 1
 
     elif token.startswith("NOTE_ON_"):
         pitch = int(token.split("_")[2])
+        i += 1
+
+    elif token.startswith("VELOCITY_"):
+        current_velocity = int(token.split("_")[1])
 
         # on s'attend à un DURATION juste après
         next_token = tokens[i + 1]
@@ -81,4 +81,4 @@ midi.instruments.append(instrument)
 
 # sauvegarde
 nomFichier = nomFichier.removesuffix(".txt")
-midi.dump("../tests/"+nomFichier+".mid")
+midi.dump("../tests_midi/"+nomFichier+".mid")

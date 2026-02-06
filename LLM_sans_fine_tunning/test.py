@@ -1,6 +1,7 @@
 import torch
 import gpt
 import re
+import os
 
 def generate_text_simple(model,idx,max_new_tokens,context_size):
     for _ in range(max_new_tokens):
@@ -26,14 +27,26 @@ GPT_CONFIG_NICO={
 }
 
 
+raw_text = ""
+i = 0
+midToTokens = False
+num_texts = 10
+with os.scandir('../training') as d:
+    for e in d:
+        current_text = e.name.replace(".txt", "")
+        try:
+            with open("../training/"+current_text+".txt","r",encoding="utf-8") as f:
+                current_text+=f.read()
+                f.close()
+            raw_text += current_text
+        except:
+            continue
 
-raw_text=""
-with open("../fichiers/exempleFichierToken.txt","r",encoding="utf-8") as f:
-    current_text=f.read()
-raw_text += current_text
-with open("../fichiers/test.txt","r",encoding="utf-8") as f:
-    current_text=f.read()
-raw_text += current_text
+        if(i == num_texts):
+            break
+        if(i%1000 == 0):
+            print(f'Avancement tokenisation: {i}/10855')
+        i+=1
 
 
 
@@ -49,12 +62,16 @@ vocab = {token:indice for indice,token in enumerate(all_tokens)}
 tokenizer = gpt.SimpleTokenizerV2(vocab)
 
 model=gpt.GPTModel(GPT_CONFIG_NICO)
-model.load_state_dict(torch.load("modelGPTmidi.pth"))
+model.load_state_dict(torch.load("modelGPTmidiAll.pth"))
 model.eval()
 
-start_context="POSITION_200"
+start_context="Abel POSITION_200"
 encoded=tokenizer.encode(start_context)
 encoded_tensor=torch.tensor(encoded).unsqueeze(0)
-out=generate_text_simple(model=model,idx=encoded_tensor,max_new_tokens=60,context_size=GPT_CONFIG_NICO["context_length"])
+out=generate_text_simple(model=model,idx=encoded_tensor,max_new_tokens=200,context_size=GPT_CONFIG_NICO["context_length"])
 decoded_text=tokenizer.decode(out.squeeze(0).tolist())
-print(decoded_text.replace(" _ ", "_"))
+
+with open("../tests/test_Abel_pos_200.txt","w",encoding="utf-8") as f:
+    for ligne in decoded_text.replace(" _ ", "_").split(" "):
+        f.write(ligne+"\n")
+    f.close()
