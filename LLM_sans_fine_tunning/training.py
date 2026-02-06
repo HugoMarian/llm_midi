@@ -83,7 +83,7 @@ raw_text=""
 # Transformation .mid -> tokens
 i=0
 midToTokens = False
-num_texts=2000
+num_texts= 10
 with os.scandir('../GrandMidiPiano') as d:
     for e in d:
         current_text = e.name.replace(".mid", "")
