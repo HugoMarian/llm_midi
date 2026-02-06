@@ -1,2 +1,5 @@
 /GrandMidiPiano
 *.mid
+*.pth
+*.txt
+*.pyc

@@ -1,0 +1,24 @@
+name: llm_midi
+
+on: [push, pull_request]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        activate-environment: llm_midi
+        environment-file: environment.yml
+        python-version: "3.10"
+        auto-activate-base: false
+
+    - name: Run main script
+      shell: bash -el {0}
+      run: |
+        python --version
+        pip install miditoolkit==1.0.1
+        # Ajoute ici la commande pour lancer ton projet, ex: python main.py
