@@ -82,7 +82,7 @@ raw_text=""
 
 # Transformation .mid -> tokens
 i=0
-midToTokens = True
+midToTokens = False
 
 with os.scandir('../GrandMidiPiano') as d:
     for e in d:
