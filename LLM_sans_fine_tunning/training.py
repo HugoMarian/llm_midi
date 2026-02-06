@@ -81,14 +81,25 @@ if relearn==True:
 raw_text=""
 
 # Transformation .mid -> tokens
+i=0
+midToTokens = True
+
 with os.scandir('../GrandMidiPiano') as d:
     for e in d:
         current_text = e.name.replace(".mid", "")
-        subprocess.run(["python", "../fichiers/midi2tokens.py", current_text+".mid"])
-        with open("../training/"+current_text+".txt","r",encoding="utf-8") as f:
-            current_text+=f.read()
-            f.close()
-        raw_text += current_text
+        if midToTokens:
+            subprocess.run(["python", "../fichiers/midi2tokens.py", current_text+".mid"])
+        try:
+            with open("../training/"+current_text+".txt","r",encoding="utf-8") as f:
+                current_text+=f.read()
+                f.close()
+            raw_text += current_text
+        except:
+            continue
+        if(i%1000 == 0):
+            print(f'Avancement tokenisation: {i}/10855')
+        i+=1
+                
 
 # with open("../fichiers/exempleFichierToken.txt","r",encoding="utf-8") as f:
 #    raw_text=f.read()
