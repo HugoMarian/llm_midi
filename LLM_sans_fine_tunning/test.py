@@ -30,8 +30,8 @@ GPT_CONFIG_NICO={
 
 raw_text = ""
 i = 0
-num_texts= 5
-d = sample(os.listdir("../training"), num_texts)
+num_texts = 7
+d = os.listdir("../training")
 for e in d:
         current_text = e.replace(".txt", "")
         try:
@@ -59,7 +59,7 @@ model=gpt.GPTModel(GPT_CONFIG_NICO)
 model.load_state_dict(torch.load("modelGPTmidiAll.pth"))
 model.eval()
 
-start_context="Morales POSITION_200"
+start_context="Posse"
 encoded=tokenizer.encode(start_context)
 encoded_tensor=torch.tensor(encoded).unsqueeze(0)
 out=generate_text_simple(model=model,idx=encoded_tensor,max_new_tokens=200,context_size=GPT_CONFIG_NICO["context_length"])

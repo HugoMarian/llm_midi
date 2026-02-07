@@ -70,8 +70,8 @@ GPT_CONFIG_NICO={
     "qkv_bias":False
 }
 
-relearn=True
-# relearn=False
+# relearn=True
+relearn=False
 model=gpt.GPTModel(GPT_CONFIG_NICO)
 
 model.to(device)
@@ -83,8 +83,12 @@ raw_text=""
 
 # Transformation .mid -> tokens
 print("Tokenization...")
-num_texts= 5
-d = sample(os.listdir("../GrandMidiPiano"), num_texts)
+num_texts = 7
+if(relearn):
+    d = os.listdir("../training")
+else:
+    d = sample(os.listdir("../GrandMidiPiano").sort(), num_texts)
+
 for e in d:
     current_text = e.replace(".mid", "")
     subprocess.run(["python", "../fichiers/midi2tokens.py", current_text+".mid"])
