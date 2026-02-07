@@ -3,6 +3,7 @@ import torch
 import gpt
 import subprocess
 import os
+from random import sample
 
 from torch.utils.data import Dataset,DataLoader
 
@@ -81,28 +82,20 @@ if relearn==True:
 raw_text=""
 
 # Transformation .mid -> tokens
-i=0
-midToTokens = False
+print("Tokenization...")
 num_texts= 10
-with os.scandir('../GrandMidiPiano') as d:
-    for e in d:
-        current_text = e.name.replace(".mid", "")
-        if midToTokens:
-            subprocess.run(["python", "../fichiers/midi2tokens.py", current_text+".mid"])
-        try:
-            with open("../training/"+current_text+".txt","r",encoding="utf-8") as f:
-                current_text+=f.read()
-                f.close()
-            raw_text += current_text
-        except:
-            continue
-
-        if(i == num_texts):
-            break
-        if(i%1000 == 0):
-            print(f'Avancement tokenisation: {i}/10855')
-        i+=1
-                
+d = sample(os.listdir("../GrandMidiPiano"), 10)
+for e in d:
+    current_text = e.replace(".mid", "")
+    subprocess.run(["python", "../fichiers/midi2tokens.py", current_text+".mid"])
+    try:
+        with open("../training/"+current_text+".txt","r",encoding="utf-8") as f:
+            current_text+=f.read()
+            f.close()
+        raw_text += current_text
+    except:
+        continue
+print("Done")
 
 # with open("../fichiers/exempleFichierToken.txt","r",encoding="utf-8") as f:
 #    raw_text=f.read()
@@ -133,7 +126,7 @@ train_loader=DataLoader(dataset=train_ds,batch_size=10,shuffle=True,num_workers=
 #print(len(train_loader))
 val_loader=DataLoader(dataset=train_ds,batch_size=10,shuffle=True,num_workers=0)
 optimizer=torch.optim.AdamW(model.parameters(),lr=0.0004,weight_decay=0.1)
-num_epochs=15
+num_epochs=10
 eval_freq=5
 eval_iter=5
 start_context=""
