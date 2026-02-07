@@ -81,4 +81,4 @@ midi.instruments.append(instrument)
 
 # sauvegarde
 nomFichier = nomFichier.removesuffix(".txt")
-midi.dump("../fichiers/tests_midi/"+nomFichier+".mid")
+midi.dump("../tests_midi/"+nomFichier+".mid")

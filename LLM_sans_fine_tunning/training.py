@@ -87,7 +87,7 @@ num_texts = 7
 if(relearn):
     d = os.listdir("../training")
 else:
-    d = sample(os.listdir("../GrandMidiPiano").sort(), num_texts)
+    d = sample(sorted(os.listdir("../GrandMidiPiano")), num_texts)
 
 for e in d:
     current_text = e.replace(".mid", "")
