@@ -59,8 +59,8 @@ def train_model_simple(model,train_loader,val_loader,optimizer,device,num_epochs
 # vocab = {token:indice for indice,token in enumerate(all_tokens)}
 # tokenizer = gpt.SimpleTokenizerV2(vocab)
 
-# device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = "cpu"
+device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = "cpu"
 GPT_CONFIG_NICO={
     "vocab_size":50257,
     "context_length":256,
@@ -71,12 +71,12 @@ GPT_CONFIG_NICO={
     "qkv_bias":False
 }
 
-#relearn=True
-relearn=False
+relearn=True
+# relearn=False
 model=gpt.GPTModel(GPT_CONFIG_NICO)
 
 model.to(device)
-if relearn==True:
+if relearn:
     model.load_state_dict(torch.load("modelGPTmidiAll.pth", map_location=device))
     model.to(device)
 
@@ -84,7 +84,7 @@ raw_text=""
 
 # Transformation .mid -> tokens
 print("Tokenization...")
-num_texts= 10
+num_texts= 5
 d = sample(os.listdir("../GrandMidiPiano"), num_texts)
 for e in d:
     current_text = e.replace(".mid", "")
