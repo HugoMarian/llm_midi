@@ -2,6 +2,7 @@ import torch
 import gpt
 import re
 import os
+from random import sample
 
 def generate_text_simple(model,idx,max_new_tokens,context_size):
     for _ in range(max_new_tokens):
@@ -29,10 +30,9 @@ GPT_CONFIG_NICO={
 
 raw_text = ""
 i = 0
-midToTokens = False
-num_texts = 10
-with os.scandir('../training') as d:
-    for e in d:
+num_texts= 10
+d = sample(os.listdir("../training"), num_texts)
+for e in d:
         current_text = e.name.replace(".txt", "")
         try:
             with open("../training/"+current_text+".txt","r",encoding="utf-8") as f:
@@ -41,12 +41,6 @@ with os.scandir('../training') as d:
             raw_text += current_text
         except:
             continue
-
-        if(i == num_texts):
-            break
-        if(i%1000 == 0):
-            print(f'Avancement tokenisation: {i}/10855')
-        i+=1
 
 
 
