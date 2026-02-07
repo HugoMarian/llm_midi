@@ -19,7 +19,6 @@ def train_model_simple(model,train_loader,val_loader,optimizer,device,num_epochs
     tokens_seen,global_step=0,-1
 
     for epoch in range(num_epochs):
-        print(f'device: {device}')
         print(f'epoch: {epoch}')
         model.train()
         for input_batch, target_batch in train_loader:
@@ -59,8 +58,8 @@ def train_model_simple(model,train_loader,val_loader,optimizer,device,num_epochs
 # vocab = {token:indice for indice,token in enumerate(all_tokens)}
 # tokenizer = gpt.SimpleTokenizerV2(vocab)
 
-# device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = "cpu"
+device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = "cpu"
 GPT_CONFIG_NICO={
     "vocab_size":50257,
     "context_length":256,
@@ -71,12 +70,12 @@ GPT_CONFIG_NICO={
     "qkv_bias":False
 }
 
-#relearn=True
-relearn=False
+relearn=True
+# relearn=False
 model=gpt.GPTModel(GPT_CONFIG_NICO)
 
 model.to(device)
-if relearn==True:
+if relearn:
     model.load_state_dict(torch.load("modelGPTmidiAll.pth", map_location=device))
     model.to(device)
 
@@ -84,7 +83,7 @@ raw_text=""
 
 # Transformation .mid -> tokens
 print("Tokenization...")
-num_texts= 10
+num_texts= 5
 d = sample(os.listdir("../GrandMidiPiano"), num_texts)
 for e in d:
     current_text = e.replace(".mid", "")
@@ -132,5 +131,6 @@ eval_freq=5
 eval_iter=5
 start_context=""
 
+print(f'device: {device}')
 train_model_simple(model,train_loader,val_loader,optimizer,device,num_epochs,eval_freq,eval_iter,start_context,tokenizer)
 torch.save(model.state_dict(),"modelGPTmidiAll.pth")

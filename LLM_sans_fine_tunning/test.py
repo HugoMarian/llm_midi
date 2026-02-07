@@ -33,7 +33,7 @@ i = 0
 num_texts= 10
 d = sample(os.listdir("../training"), num_texts)
 for e in d:
-        current_text = e.name.replace(".txt", "")
+        current_text = e.replace(".txt", "")
         try:
             with open("../training/"+current_text+".txt","r",encoding="utf-8") as f:
                 current_text+=f.read()
