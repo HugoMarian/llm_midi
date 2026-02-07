@@ -59,13 +59,13 @@ model=gpt.GPTModel(GPT_CONFIG_NICO)
 model.load_state_dict(torch.load("modelGPTmidiAll.pth"))
 model.eval()
 
-start_context="Posse"
+start_context="Bach POSITION"
 encoded=tokenizer.encode(start_context)
 encoded_tensor=torch.tensor(encoded).unsqueeze(0)
-out=generate_text_simple(model=model,idx=encoded_tensor,max_new_tokens=200,context_size=GPT_CONFIG_NICO["context_length"])
-decoded_text=tokenizer.decode(out.squeeze(0).tolist())
+out=generate_text_simple(model=model,idx=encoded_tensor,max_new_tokens=99,context_size=GPT_CONFIG_NICO["context_length"])
+decoded_text=tokenizer.decode(out.squeeze(0).tolist())[1:]
 
-with open("../tests/test_Morales.txt","w",encoding="utf-8") as f:
+with open("../tests/test_Bach.txt","w",encoding="utf-8") as f:
     for ligne in decoded_text.replace(" _ ", "_").split(" "):
         f.write(ligne+"\n")
     f.close()

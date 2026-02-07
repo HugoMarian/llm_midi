@@ -84,13 +84,13 @@ raw_text=""
 # Transformation .mid -> tokens
 print("Tokenization...")
 num_texts = 7
-if(relearn):
+if relearn:
     d = os.listdir("../training")
 else:
     d = sample(sorted(os.listdir("../GrandMidiPiano")), num_texts)
 
 for e in d:
-    current_text = e.replace(".mid", "")
+    current_text = e.replace(".mid", "").replace(".txt", "")
     subprocess.run(["python", "../fichiers/midi2tokens.py", current_text+".mid"])
     try:
         with open("../training/"+current_text+".txt","r",encoding="utf-8") as f:
