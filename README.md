@@ -28,3 +28,5 @@ En donnant le nom du musicien comme contexte de départ, on génère des styles 
 Le gpt arrive à générer des accords mineurs et majeurs qu'il a sûrement du voir dans son entraînement.
 
 Il y a un problème pour la position de départ, la génération en donnant une position de départ n'est pas cohérente avec la note suivante qui est bien plus tard.
+
+Ouvrir avec un logiciel comme Audacity pour voir la position des notes pour écouter plus proprement.
