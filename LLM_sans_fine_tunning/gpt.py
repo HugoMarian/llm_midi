@@ -1,160 +1,140 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset,DataLoader
+from torch.utils.data import Dataset
 import re
 
+
 class FeedForward(nn.Module):
-    def __init__(self,cfg):
+    def __init__(self, cfg):
         super().__init__()
-        self.layers=nn.Sequential(
-            nn.Linear(cfg["emb_dim"],4*cfg["emb_dim"]),
-            nn.ReLU(),
-            nn.Linear(4*cfg["emb_dim"],cfg["emb_dim"]))
+        self.layers = nn.Sequential(
+            nn.Linear(cfg["emb_dim"], 4 * cfg["emb_dim"]),
+            nn.GELU(),
+            nn.Linear(4 * cfg["emb_dim"], cfg["emb_dim"])
+        )
 
-    def forward(self,x):
-            return self.layers(x)
-    
+    def forward(self, x):
+        return self.layers(x)
+
+
 class MultiHeadAttention(nn.Module):
-    def __init__(self,d_in,d_out,context_length,dropout,num_heads,qkv_bias=False):
+    def __init__(self, d_in, d_out, context_length, dropout, num_heads, qkv_bias=False):
         super().__init__()
-        assert(d_out %num_heads==0), "d_out must be divisible by num_heads"
-        self.d_out=d_out
-        self.num_heads=num_heads
-        self.head_dim=d_out // num_heads
-        self.W_query=nn.Linear(d_in,d_out,bias=qkv_bias)
-        self.W_key=nn.Linear(d_in,d_out,bias=qkv_bias)
-        self.W_value=nn.Linear(d_in,d_out,bias=qkv_bias)
-        self.out_proj=nn.Linear(d_out,d_out)
-        self.dropout=nn.Dropout(dropout)
-        self.register_buffer("mask",torch.triu(torch.ones(context_length,context_length),diagonal=1))
+        assert d_out % num_heads == 0
+        self.num_heads = num_heads
+        self.head_dim = d_out // num_heads
 
-    def forward(self,x):
-        b,num_tokens,d_in=x.shape
-        keys=self.W_key(x)
-        queries=self.W_query(x)
-        values=self.W_value(x)
-        keys=keys.view(b,num_tokens,self.num_heads,self.head_dim)
-        values=values.view(b,num_tokens,self.num_heads,self.head_dim)
-        queries=queries.view(b,num_tokens,self.num_heads,self.head_dim)
+        self.W_q = nn.Linear(d_in, d_out, bias=qkv_bias)
+        self.W_k = nn.Linear(d_in, d_out, bias=qkv_bias)
+        self.W_v = nn.Linear(d_in, d_out, bias=qkv_bias)
+        self.out_proj = nn.Linear(d_out, d_out)
+        self.dropout = nn.Dropout(dropout)
 
-        keys=keys.transpose(1,2)
-        queries=queries.transpose(1,2)
-        values=values.transpose(1,2)
-        attn_scores=queries @ keys.transpose(2,3)
-        mask_bool=self.mask.bool()[:num_tokens,:num_tokens]
+        self.register_buffer(
+            "mask",
+            torch.triu(torch.ones(context_length, context_length), diagonal=1)
+        )
 
-        attn_scores.masked_fill_(mask_bool,-torch.inf)
+    def forward(self, x):
+        B, T, _ = x.shape
 
-        attn_weights=torch.softmax(attn_scores/keys.shape[-1]**0.5,dim=-1)
-        attn_weights=self.dropout(attn_weights)
+        q = self.W_q(x).view(B, T, self.num_heads, self.head_dim).transpose(1, 2)
+        k = self.W_k(x).view(B, T, self.num_heads, self.head_dim).transpose(1, 2)
+        v = self.W_v(x).view(B, T, self.num_heads, self.head_dim).transpose(1, 2)
 
-        context_vec=(attn_weights @ values).transpose(1,2)
+        scores = q @ k.transpose(2, 3)
+        scores = scores.masked_fill(self.mask[:T, :T].bool(), -1e9)
+        attn = torch.softmax(scores / (self.head_dim ** 0.5), dim=-1)
+        attn = self.dropout(attn)
 
-        context_vec=context_vec.contiguous().view(b,num_tokens,self.d_out)
+        out = (attn @ v).transpose(1, 2).contiguous().view(B, T, -1)
+        return self.out_proj(out)
 
-        context_vec=self.out_proj(context_vec)
 
-        return context_vec
-        
 class LayerNorm(nn.Module):
-    def __init__(self,emb_dim):
+    def __init__(self, dim):
         super().__init__()
-        self.eps=1e-5
-        self.scale=nn.Parameter(torch.ones(emb_dim))
-        self.shift=nn.Parameter(torch.zeros(emb_dim))
+        self.scale = nn.Parameter(torch.ones(dim))
+        self.shift = nn.Parameter(torch.zeros(dim))
+        self.eps = 1e-5
 
-    def forward(self,x):
-        mean=x.mean(dim=-1,keepdim=True)
-        var=x.var(dim=-1,keepdim=True,unbiased=False)
-        norm_x=(x-mean)/torch.sqrt(var+self.eps)
-        return self.scale*norm_x+self.shift
+    def forward(self, x):
+        mean = x.mean(-1, keepdim=True)
+        var = x.var(-1, keepdim=True, unbiased=False)
+        return self.scale * (x - mean) / torch.sqrt(var + self.eps) + self.shift
+
 
 class TransformerBlock(nn.Module):
-    def __init__(self,cfg):
+    def __init__(self, cfg):
         super().__init__()
-        self.att=MultiHeadAttention(d_in=cfg["emb_dim"],d_out=cfg["emb_dim"],context_length=cfg["context_length"],num_heads=cfg["n_heads"],dropout=cfg["drop_rate"],qkv_bias=cfg["qkv_bias"])
-        self.ff=FeedForward(cfg)
-        self.norm1=LayerNorm(cfg["emb_dim"])
-        self.norm2=LayerNorm(cfg["emb_dim"])
-        self.drop_shortcut=nn.Dropout(cfg["drop_rate"])
+        self.att = MultiHeadAttention(
+            cfg["emb_dim"], cfg["emb_dim"],
+            cfg["context_length"], cfg["drop_rate"],
+            cfg["n_heads"], cfg["qkv_bias"]
+        )
+        self.ff = FeedForward(cfg)
+        self.ln1 = LayerNorm(cfg["emb_dim"])
+        self.ln2 = LayerNorm(cfg["emb_dim"])
+        self.drop = nn.Dropout(cfg["drop_rate"])
 
-    def forward(self,x):
-        shortcut=x
-        x=self.norm1(x)
-        x=self.att(x)
-        x=self.drop_shortcut(x)
-        x=x+shortcut
-
-        shortcut=x
-        x=self.norm2(x)
-        x=self.ff(x)
-        x=self.drop_shortcut(x)
-        x=x+shortcut
+    def forward(self, x):
+        x = x + self.drop(self.att(self.ln1(x)))
+        x = x + self.drop(self.ff(self.ln2(x)))
         return x
 
+
 class GPTModel(nn.Module):
-    def __init__(self,cfg):
+    def __init__(self, cfg):
         super().__init__()
-        self.tok_emb=nn.Embedding(cfg["vocab_size"],cfg["emb_dim"])
-        self.pos_emb=nn.Embedding(cfg["context_length"],cfg["emb_dim"])
-        self.drop_emb=nn.Dropout(cfg["drop_rate"])
+        self.tok_emb = nn.Embedding(cfg["vocab_size"], cfg["emb_dim"])
+        self.pos_emb = nn.Embedding(cfg["context_length"], cfg["emb_dim"])
+        self.drop = nn.Dropout(cfg["drop_rate"])
 
-        self.trf_blocks=nn.Sequential(*[TransformerBlock(cfg) for _ in range(cfg["n_layers"])])
+        self.blocks = nn.Sequential(
+            *[TransformerBlock(cfg) for _ in range(cfg["n_layers"])]
+        )
+        self.ln_f = LayerNorm(cfg["emb_dim"])
+        self.head = nn.Linear(cfg["emb_dim"], cfg["vocab_size"], bias=False)
 
-        self.final_norm=LayerNorm(cfg["emb_dim"])
-        self.out_head=nn.Linear(cfg["emb_dim"],cfg["vocab_size"],bias=False)
-
-    def forward(self,in_idx):
-        batch_size,seq_len=in_idx.shape
-        tok_embeds=self.tok_emb(in_idx)
-        
-        pos_embeds=self.pos_emb(torch.arange(seq_len,device=in_idx.device))
-        x=tok_embeds+pos_embeds
-
-        x=self.drop_emb(x)
-        x=self.trf_blocks(x)
-        x=self.final_norm(x)
-        logits=self.out_head(x)
-
-        return logits
+    def forward(self, idx):
+        B, T = idx.shape
+        tok = self.tok_emb(idx)
+        pos = self.pos_emb(torch.arange(T, device=idx.device))
+        x = self.drop(tok + pos)
+        x = self.blocks(x)
+        x = self.ln_f(x)
+        return self.head(x)
 
 
 class GPTDatasetV1(Dataset):
-    def __init__(self,txt,tokenizer,max_length,stride):
-        self.input_ids=[]
-        self.target_ids=[]
+    def __init__(self, text, tokenizer, max_length, stride):
+        self.x, self.y = [], []
+        ids = tokenizer.encode(text)
 
-        token_ids=tokenizer.encode(txt)
-
-        for i in range(0,len(token_ids)-max_length,stride):
-            input_chunk=token_ids[i:i+max_length]
-            target_chunk=token_ids[i+1:i+max_length+1]
-            self.input_ids.append(torch.tensor(input_chunk))
-            self.target_ids.append(torch.tensor(target_chunk))
-        
-    def __getitem__(self,idx):
-        return self.input_ids[idx],self.target_ids[idx]
+        for i in range(0, len(ids) - max_length + 1, stride):
+            self.x.append(torch.tensor(ids[i:i+max_length]))
+            self.y.append(torch.tensor(ids[i+1:i+max_length+1]))
 
     def __len__(self):
-        return len(self.input_ids)
+        return len(self.x)
+
+    def __getitem__(self, idx):
+        return self.x[idx], self.y[idx]
 
 
 class SimpleTokenizerV2:
-    def __init__(self,vocab):
-        self.str_to_int = vocab
-        self.int_to_str = { i:s for s,i in vocab.items() }
+    def __init__(self, vocab):
+        self.stoi = vocab
+        self.itos = {i: s for s, i in vocab.items()}
 
-    def encode(self,text):
-        preprocessed=re.split(r'([,.:;?_!"()\`]|--|\s)',text)
-        preprocessed= [
-            item.strip() for item in preprocessed if item.strip()
-        ]
-        preprocessed = [item if item in self.str_to_int else "<|unk|>" for item in preprocessed]
-        ids = [self.str_to_int[s] for s in preprocessed]
-        return ids
+    @staticmethod
+    def tokenize(text):
+        parts = re.split(r'([,.:;?_!"()\`]|--|\s)', text)
+        return [p.strip() for p in parts if p and p.strip()]
 
-    def decode (self,ids):
-        text = " ".join([self.int_to_str[i] for i in ids])
+    def encode(self, text):
+        tokens = self.tokenize(text)
+        return [self.stoi.get(t, self.stoi["<|unk|>"]) for t in tokens]
 
-        text = re.sub(r'\s+([,.:;?!"()\`])', r'\1',text)
-        return text
+    def decode(self, ids):
+        return " ".join(self.itos[i] for i in ids)
