@@ -59,7 +59,8 @@ def train_model_simple(model,train_loader,val_loader,optimizer,device,num_epochs
 # vocab = {token:indice for indice,token in enumerate(all_tokens)}
 # tokenizer = gpt.SimpleTokenizerV2(vocab)
 
-device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = "cpu"
 GPT_CONFIG_NICO={
     "vocab_size":50257,
     "context_length":256,
@@ -84,7 +85,7 @@ raw_text=""
 # Transformation .mid -> tokens
 print("Tokenization...")
 num_texts= 10
-d = sample(os.listdir("../GrandMidiPiano"), 10)
+d = sample(os.listdir("../GrandMidiPiano"), num_texts)
 for e in d:
     current_text = e.replace(".mid", "")
     subprocess.run(["python", "../fichiers/midi2tokens.py", current_text+".mid"])
