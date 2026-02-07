@@ -70,8 +70,8 @@ GPT_CONFIG_NICO={
     "qkv_bias":False
 }
 
-# relearn=True
-relearn=False
+relearn=True
+# relearn=False
 model=gpt.GPTModel(GPT_CONFIG_NICO)
 
 model.to(device)
